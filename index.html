@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мониторинг Сети — Белгород</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            --panel-bg: rgba(255, 255, 255, 0.03);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Эффекты переливания для статусов */
+            --active-gradient: linear-gradient(45deg, #ef4444, #f97316, #b91c1c);
+            --clear-gradient: linear-gradient(45deg, #10b981, #06b6d4, #047857);
+            --process-gradient: linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: modernBg 15s ease infinite;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* Анимация заднего фона */
+        @keyframes modernBg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Главный стеклянный контейнер */
+        .app-container {
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 
+                        inset 0 1px 0 rgba(255,255,255,0.1);
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+            background: linear-gradient(180deg, #fff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 35px;
+        }
+
+        /* Большой круглый индикатор с переливанием */
+        .status-orb {
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 30px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: #1e293b;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+        }
+
+        .status-orb::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: var(--process-gradient);
+            background-size: 200% 200%;
+            animation: orbRotate 3s linear infinite;
+            z-index: -1;
+            transition: all 0.5s ease;
+        }
+
+        @keyframes orbRotate {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Внутренний текст внутри сферы */
+        .status-icon {
+            font-size: 2.5rem;
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+
+        /* Текстовый статус */
+        .status-text {
+            font-size: 1.3rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            transition: color 0.3s;
+        }
+
+        .status-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin-bottom: 35px;
+            padding: 0 10px;
+        }
+
+        /* Кнопка обновления */
+        .refresh-btn {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            padding: 14px 28px;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .refresh-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Стили состояний */
+        .state-processing::before { background: var(--process-gradient); }
+        .state-processing + .status-text { color: #60a5fa; }
+
+        .state-active::before { background: var(--active-gradient); box-shadow: 0 0 30px rgba(239, 68, 68, 0.4); }
+        .state-active + .status-text { color: #f87171; }
+
+        .state-clear::before { background: var(--clear-gradient); box-shadow: 0 0 30px rgba(16, 185, 129, 0.4); }
+        .state-clear + .status-text { color: #34d399; }
+
+        /* Иконка вращения при загрузке */
+        .spin {
+            animation: loadingSpin 1s linear infinite;
+        }
+        @keyframes loadingSpin {
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <h1>Мониторинг Интернет-Доступа</h1>
+        <div class="subtitle">Проверка режима «Белых Списков»</div>
+
+        <div class="status-orb state-processing" id="orb">
+            <span class="status-icon" id="icon">📡</span>
+        </div>
+
+        <div class="status-text" id="statusTitle">Анализ сети...</div>
+        <div class="status-desc" id="statusDesc">Проверяем доступность внешних ресурсов за пределами РФ шлюзов.</div>
+
+        <button class="refresh-btn" onclick="checkInternet()">
+            <svg id="refreshIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            <span>Перепроверить статус</span>
+        </button>
+    </div>
+
+    <script>
+        async function testResource(url) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3500); // Тайм-аут 3.5 секунды
+
+            try {
+                // Используем режим no-cors, чтобы избежать проблем с политикой безопасности, нам важен сам факт ответа сервера
+                await fetch(url, { mode: 'no-cors', signal: controller.signal, cache: 'no-store' });
+                clearTimeout(timeoutId);
+                return true; 
+            } catch (e) {
+                clearTimeout(timeoutId);
+                return false;
+            }
+        }
+
+        async function checkInternet() {
+            const orb = document.getElementById('orb');
+            const icon = document.getElementById('icon');
+            const title = document.getElementById('statusTitle');
+            const desc = document.getElementById('statusDesc');
+            const btnIcon = document.getElementById('refreshIcon');
+
+            // Включаем анимацию загрузки
+            btnIcon.classList.add('spin');
+            orb.className = "status-orb state-processing";
+            icon.innerText = "📡";
+            title.innerText = "Анализ сети...";
+            desc.innerText = "Посылаем тестовые пакеты на защищенные и открытые шлюзы...";
+
+            // Тестируем Яндекс (всегда в БС) и Google/Apple (обычно режутся в БС)
+            // Используем адреса, которые стабильно отдают быстрый ответ
+            const [yandexWorks, externalWorks] = await Promise.all([
+                testResource('https://ya.ru'),
+                testResource('https://google.com')
+            ]);
+
+            btnIcon.classList.remove('spin');
+
+            if (yandexWorks && !externalWorks) {
+                // Белые списки включены
+                orb.className = "status-orb state-active";
+                icon.innerText = "🛑";
+                title.innerText = "Белые списки АКТИВНЫ";
+                desc.innerText = "Доступ к зарубежным сайтам блокируется оператором. Работают только одобренные российские сервисы.";
+            } else if (!yandexWorks && !externalWorks) {
+                // Интернета вообще нет или крайне слабый сигнал
+                orb.className = "status-orb state-active";
+                icon.innerText = "❌";
+                title.innerText = "Нет соединения";
+                desc.innerText = "Не удалось связаться ни с одним тестовым сервером. Проверьте мобильные данные или баланс.";
+            } else {
+                // Всё работает нормально
+                orb.className = "status-orb state-clear";
+                icon.innerText = "⚡";
+                title.innerText = "Ограничений НЕТ";
+                desc.innerText = "Внешние ресурсы и поисковые системы доступны. Фильтрация трафика на данный момент отключена.";
+            }
+        }
+
+        // Запуск при открытии страницы
+        window.onload = checkInternet;
+    </script>
+</body>
+</html>
